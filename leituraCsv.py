@@ -8,7 +8,7 @@ with open('teste.csv', 'r', newline='') as arquivo_csv:
     for linha in leitor_csv:
         # Cada linha é uma lista contendo os valores das colunas
         nome = linha[0]
-        idade = linha[1]  # Converte a idade para inteiro
+        idade = linha[1]
         cidade = linha[2]
 
         print(f"Nome: {nome}, Idade: {idade}, Cidade: {cidade}")
