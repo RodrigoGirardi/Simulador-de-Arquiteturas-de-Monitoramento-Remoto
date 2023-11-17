@@ -27,14 +27,12 @@ def servidor():
     while True:
         ler_fifo = sc.recv(1024)
         #dado = ler_fifo.decode("utf-8")
-        hex_string = ' '.join(format(byte, '02x') for byte in ler_fifo) 
-        fifo.put(hex_string)#else add no buffer
+        hex_string = ' '.join(format(byte, '02x') for byte in ler_fifo)
+        hex_parts = hex_string.split()# Divida a string formatada em partes individuais usando o espaço em branco como separador
+        fifo.put(hex_parts)#colocado dado no buffer
+        print(f"Dado colocado na FIFO: {hex_parts}")
         print("Servidor foi chamado e escreveu na FIFO")
         print(fifo.qsize())
-
-        '''while not fifo.empty():
-            item = fifo.get()
-            print("Item na FIFO:", item)'''
 
 ################### TIMER
 def timer():#chama o decodificador a cada 0.1 ou 0.05 segundos
@@ -42,20 +40,26 @@ def timer():#chama o decodificador a cada 0.1 ou 0.05 segundos
     while True:
         if fifo.qsize() >= MAX_SIZE_BUFFER:#CHEIO
             print("Timer chamado: FIFO cheia")
-            dataFifo = fifo.get()
-            hex_string = ' '.join(format(byte, '02x') for byte in dataFifo)
-            hex_parts = hex_string.split()
-            split(hex_parts)
-            time.sleep(0.2)#Acelerando leitura de buffer
+            package =  fifo.get()
+            #print(f"Fifo get: {dataFifo}")
+            split(package)
+            print(f"Fifo Get: {package}")
+            print(f"package: {package}")
+            time.sleep(0.05)#Acelerando leitura de buffer
         if fifo.empty():#se fifo estiver vazia
             print(Fore.RED + "Fifo vazia...")
-            time.sleep(0.2)#
+            #time.sleep(1)#
         else:
             #print("Timer chamado: FIFO não cheia")
-            dataFifo = fifo.get()
-            hex_string = ' '.join(format(byte, '02x') for byte in dataFifo)
-            hex_parts = hex_string.split()
-            split(hex_parts)
+            '''dataFifo = fifo.get()
+            subStr = dataFifo.split()
+            package = [int(valor) for valor in subStr]'''
+            #print(f"Fifo get: {dataFifo}")
+            
+            #byte_array = bytes.fromhex(hex_string)
+            package =  fifo.get()
+            split(package)
+            print(f"Fifo Get: {package}")
             time.sleep(0.1)
         #time.sleep(t)  # Espera "t" milissegundos
 ################### Funcao de escrita no arquivo
@@ -84,11 +88,11 @@ def split(vet):
         if cmd >= 0 and cmd <= 4: #cmd correto
             print(f"Valor Comando: {cmd}")
             pacoteOk.append(cmd1)
-            
+            #time.sleep(3)
             if size >= 0 and size <= 99:
                 print(f"Valor Size: {size}")
                 pacoteOk.append(size1)
-                
+                #time.sleep(3)
                 crcV = crcV ^ cmd
                 print(f"Resultado: {crcV} ^ {cmd} -> {crcV}")
                 crcV = crcV ^ size
@@ -102,12 +106,14 @@ def split(vet):
                     print(f"Resultado verifi: {crcP} ^ {int(vet[pos], 16)} -> {crcV}")
                     i += 1
                     pos += 1
+                    #time.sleep(3)
                 if crcV == crc:
                     print(f"Valor CRC: {crc}")
                     pacoteOk.append(crc1)
                     for item in pacoteOk:
                         if item in vet:
                             vet.remove(item)
+                    #time.sleep(3)
                     print(f"Pacote OK: {pacoteOk}")
                     print(f"Pacote da fifo: {vet}")
                     print(f"Dado consistente.")
@@ -115,25 +121,36 @@ def split(vet):
                     pacoteOk.clear()#limpa para a proxima iteração
 
                 else:
+                    pacoteOk.append(crc1)
+                    for item in pacoteOk:
+                        if item in vet:
+                            vet.remove(item)
+                    pacoteOk.clear()#limpa para a proxima iteração
+                    print("Falhei na verificação de crc")
                     print(f"Pacote OK: {pacoteOk}")
                     print(f"Valor CRC: {crc}")
                     print(f"Pacote da fifo: {vet}")
                     print(f"Dado inconsistente.")
+                    #time.sleep(3)
             else:#size inconsistente
-                crcV = 0
+                vet.pop(1)
+                print(f"Valor Size: {size} inconsistente")
+                '''crcV = 0
                 crcV = crcV ^ cmd
                 #print(f"Resultado: {crcV} ^ {cmd} -> {crcV}")
                 crcV = crcV ^ size
                 #print(f"Resultado: {crcV} ^ {size} -> {crcV}")
                 for size in vet:
-                    crcV = crcV ^ vet[size]
-
+                    crcV = crcV ^ vet[size]'''
+            #time.sleep(3)
         else:#cmd inconsistente
-            size = int(vet[1], 16)
-            for size in vet:
+            vet.pop(0)
+            print(f"Valor cmd: {cmd} inconsistente")
+            #vai sair do else e cair no while e seguir o baile
+            '''for size in vet:
                 vet.pop(size)
-            vet.pop(cmd)
-
+            vet.pop(cmd)'''
+        #time.sleep(3)
 
 ################### Crie as thread para as funções
 thread1 = threading.Thread(target=servidor)
@@ -143,3 +160,5 @@ thread1.start()# Inicie o paralelismo para o servidor
 time.sleep(0.5) 
 thread2.start()# Inicie o paralelismo para o decodificador
 time.sleep(0.5)
+
+
