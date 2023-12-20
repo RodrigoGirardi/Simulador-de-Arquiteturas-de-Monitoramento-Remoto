@@ -1,6 +1,0 @@
-#Mapa de dados, cada disparo de dado tera essa estrutura;
-#1º byte: comando;
-#2º byte: tamanho da dado a seguir;
-#3º byte: dados;
-#4º byte: CRC1;
-#5º byte: CRC2;
